@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Webview</title>
+</head>
+<style>
+
+	html, body {
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+	}
+
+	webview {
+		position: absolute;
+		width: 99%;
+		left: 0;
+		right: 0;
+		margin: 0 auto;
+		height: 100%;
+	}
+</style>
+<body>
+	<webview src="https://youtube.com" style="width:100%; height:100%"></webview>
+	<script>
+		if (typeof module === 'object') {window.module = module; module = undefined;}
+		window.$ = window.jQuery = require('jquery');
+	</script>
+	<script>
+		var ipc = require('electron').ipcRenderer;
+		var temp = window.alert; 
+
+		$(window).on("load", function() {
+			webview = document.querySelector('webview');
+			webview.focus(); 
+
+
+			webview.addEventListener('dom-ready', () => {
+				//webview.executeJavaScript("document.getElementsByName('search_query')[0].focus();");
+
+				//webview.insertCSS('body { cursor: url(https://image.ibb.co/feDKP7/tiny_cursor.png) !important}');
+
+				//webview.insertCSS('body { cursor: crosshair !important}');
+
+				//check the current focused element
+				webview.executeJavaScript("var activeElement = document.activeElement; var inputs = ['input', 'textarea']; if (inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1) { console.log('keyboard'); } else { console.log('no-keyboard') } "); 
+
+				$('body').mousedown(function() {
+					setTimeout(function() {
+						//webview.executeJavaScript("var activeElement = document.activeElement; var inputs = ['input', 'textarea']; if (inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1) { console.log('keyboard'); } else { console.log('no-keyboard') } "); 
+						webview.executeJavaScript("var activeElement = document.activeElement; var inputs = ['input', 'textarea']; if (inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1) { console.log('keyboard'); } else if (document.getElementById('movie_player') == document.activeElement) {console.log('click:video'); } else if (document.getElementsByClassName('ytp-play-button')[0]) {console.log('click:video');} else { console.log('no-keyboard') }"); 
+					}, 50); 
+				}); 
+
+				/*var activeElement = document.activeElement; 
+				var inputs = ['input', 'textarea']; 
+				if (inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1) { 
+					console.log('keyboard'); 
+				} else { console.log('no-keyboard') }
+
+				if (activeElement == document.getElementById('video-stream html5-main-video')[0]) {
+					console.log('clicked on a video'); 
+				}*/
+
+				/*var activeElement = document.activeElement;
+				console.log(activeElement); 
+				var inputs = ['input', 'select', 'button', 'textarea'];
+
+				if (inputs.indexOf(activeElement.tagName.toLowerCase()) === -1) {
+					alert("is an input"); 
+				}*/
+
+				/*webview.executeJavaScript("document.getElementsByName('email')[0].focus();"); 
+				webview.insertText("gittebel@yahoo.com"); 
+
+				webview.executeJavaScript("document.getElementsByName('password')[0].focus();"); 
+				webview.insertText("hjemmebiografen");
+
+				webview.executeJavaScript("document.getElementsByClassName('login-button')[0].click();");*/
+			});
+
+			webview.addEventListener('console-message', (e) => {
+				console.log(e.message); 
+				if (e.message == "keyboard") {
+					ipc.send("keyboard", {active: true}); 
+				} else if (e.message == "no-keyboard") {
+					ipc.send("keyboard", {active: false});
+				} else if (e.message == "click:video") {
+					ipc.send("temp", {}); 
+				} else if (e.message.split(':')[0] == "search") {
+					console.log("we here fam"); 
+					ipc.send("search-query", {query: e.message.split(':')[1]}); 
+				}
+			}); 
+
+			webview.addEventListener('did-navigate-in-page', function() {
+				var vid_id = parse_youtube_url(webview.getURL()); 
+				if (!vid_id) {
+					console.log("not a video"); 
+				} else {
+					console.log("is a video with ID: " + vid_id); 
+					ipc.send("youtube-video", {id: vid_id}); 
+				}
+			});
+
+			ipc.on("search-query", function(event, data) {
+				webview.executeJavaScript("console.log('search:' + document.getElementsByName('search_query')[0].value)"); 
+			}); 
+
+			$('body').on("keyup", function(e) {
+				//detect if video is clicked
+				if (e.keyCode == 27) {
+					ipc.send("close", {}); 
+				}
+
+			}); 
+
+			$("body").on("keyup", function(e) {
+				if (e.keyCode == 32) {
+					ipc.send("temp", {}); 
+				} else if (e.keyCode == 80) {
+					e.preventDefault(); 
+					webview.executeJavaScript("document.getElementById('video-stream html5-main-video')[0].focus()"); 
+				} else if (e.keyCode == 13) {
+					console.log("got an enter event"); 
+					webview.executeJavaScript("console.log('search:' + document.getElementsByName('search_query')[0].value);");
+				}
+			});
+		}); 
+
+function parse_youtube_url(url) {
+	var regExp = /^.*(youtu.be\/|v\/|e\/|u\/\w+\/|embed\/|v=)([^#\&\?]*).*/; 
+	var match = url.match(regExp); 
+	if (match && match[2].length == 11) {
+		return match[2]; 
+	} else {
+		return false; 
+	}
+}
+</script>
+</body>
+</html>

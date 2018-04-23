@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dash</title>
+	<link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			height: 100%;
+			width: 100%; 
+			padding: 0;
+			margin: 0;
+			background-color: black;
+			overflow: hidden;
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		.background-image {
+			height: 100%;
+			width: 100%;
+		}
+
+		.logo {
+			position: absolute;
+			left: 0;
+			right: 0;
+			width: 30%;
+			margin: 0 auto;
+			top: 39%;
+
+		}
+
+		.load-gif {
+			position: absolute;
+			left: 0;
+			right: 0;
+			margin: 0 auto;
+			width: 60px;
+			height: 60px;
+			top: 52%;
+		}
+
+		.overlay {
+			position: absolute;
+			top: 0;
+			left: 0;
+			height: 100%;
+			width: 100%;
+			background-color: #1f1a50;
+			opacity: 0.1;
+		}
+
+		.label-container {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 300px;
+			height: 80px;
+			margin: 25px;
+		}
+
+		.label-icon {
+			position: absolute;
+			height: 80px;
+			width: 100px;
+			padding: 5px;
+			text-align: center;
+			color: rgb(75,195,229);
+			font-size: 60px;
+		}
+
+		.label-text {
+			position: absolute;
+			top: 13px;
+			right: 0;
+			height: 48px;
+			width: 200px;
+			border-left: 2px solid white;
+			padding-left: 20px;
+			padding-top: 2px;
+			color: white;
+			font-size: 40px;
+			font-family: "Nunito", sans-serif;
+		}
+
+		.start-game {
+			position: absolute;
+			top: 0;
+			right: 0;
+			height: 100%;
+			width: 100%;
+			background-color: rgba(50, 50, 50, 0.75);
+			display: none;
+			z-index: 998;
+		}
+
+		.start-game-text {
+			position: absolute;
+			left: 0;
+			right: 0;
+			width: 24%;
+			margin: 0 auto;
+			top: 40%;
+		}
+
+		.wave-container {
+			width: 100%;
+			height: 100%;
+		}
+
+		.wave-button {
+			position: absolute;
+			border-radius: 100%;
+			padding: 10px;
+		}
+
+		.wave-button-1 {
+			top: 35%;
+			left: 5%;
+			height: 240px;
+			width: 240px;
+		}
+
+		.wave-button-2 {
+			top: 30%;
+			left: 27%;
+			height: 300px;
+			width: 300px;
+		}
+
+		.wave-button-3 {
+			top: 35%;
+			left: 54%;
+			height: 240px;
+			width: 240px;
+		}
+
+		.wave-button-4 {
+			top: 35%;
+			left: 76%;
+			height: 240px;
+			width: 240px;
+		}
+
+		.select-button {
+			border: 2px solid rgb(75,195,229);
+		}
+
+		.wave-button-image {
+			width: 100%;
+			height: 100%;
+			border-radius: 100%;
+			background-color: black;
+		}
+
+		.time-container {
+			position: absolute;
+			bottom: 28px;
+			left: 46px;
+			color: white;
+			font-family: "Nunito", sans-serif;
+			font-size: 68px;
+		}
+
+		sup {
+			padding-top: 2px;
+			vertical-align: super;
+			font-size: 28px;
+		}
+	</style>
+</head>
+<body>
+	<audio src="sound.mp3" id="audio"></audio>
+	<img src="background.gif" class="background-image">
+	<div class="overlay"></div>
+	<img src="logo.png" class="logo">
+	<img src="loading.gif" class="load-gif">
+	<div class="start-game">
+		<img class="start-game-text" src="loading.png">
+	</div>
+	<div class="hidden">
+		<div class="label-container">
+			<div class="label-icon">
+				<i class="fa fa-home"></i>
+			</div>
+			<div class="label-text">home</div>
+		</div>
+		<div class="wave-container">
+			<div class="wave-button wave-button-1">
+				<img class="wave-button-image" src="app-1.png">
+			</div>
+			<div class="wave-button wave-button-2 select-button">
+				<img class="wave-button-image" src="app-2.png">
+			</div>
+			<div class="wave-button wave-button-3">
+				<img class="wave-button-image" src="app-3.png">
+			</div>
+			<div class="wave-button wave-button-4">
+				<img class="wave-button-image" src="app-4.png">
+			</div>
+		</div>
+		<div class="time-container"></div>
+		<div class="volume-controller"></div>
+	</div>
+	<script src="../node_modules/socket.io-client/dist/socket.io.js"></script>
+	<script>
+		if (typeof module === 'object') {window.module = module; module = undefined;}
+		window.$ = window.jQuery = require('jquery');
+	</script>
+	<script>
+		var ipc = require('electron').ipcRenderer; 
+		ipc.send('connect', "");
+		var start_pos_top = new Array(5);
+		var start_pos_left = new Array(5); 
+		var start_radius = new Array(5); 
+		var offset = 0;
+		var is_active = false; 
+		var hasStarted = false; 
+		var load = window.location.search.split('=')[1];  
+
+		if (load == '0') {
+			hasStarted = true; 
+			$('.overlay').animate({opacity: 0.7}, 50);
+			$('.logo').fadeOut(1000); 
+			$('.load-gif').fadeOut(1000); 
+			$('.hidden').delay(1000).fadeIn(1000, function() {
+				for (var i = 1; i < 5; i++) {
+					start_pos_top[i] = $(".wave-button-" + i).position().top; 
+					start_pos_left[i] = $(".wave-button-" + i).position().left; 
+					start_radius[i] = $(".wave-button-" + i).width(); 
+				} 
+			}); 
+		}
+
+		$(window).on("load", function() {
+			ipc.on("key-press", function(event, data) {
+				if (data.key == "left-arrow") {
+					moveIconsRight();
+				} else if (data.key == "right-arrow") {
+					moveIconsLeft();
+				}
+			}); 
+
+			$("body").on("keyup", function(e) {
+				console.log("keyup detected: " + e.keyCode); 
+
+				if (e.keyCode == 27) {
+					ipc.send("close", {}); 
+				}	
+
+				if (!is_active) {
+					if (e.keyCode == 27) {
+						ipc.send("close", {}); 
+					} else if (e.keyCode == 37) {
+						if (!hasStarted) {
+							start(); 
+							hasStarted = true; 
+						} else {
+							moveIconsRight(); 
+							is_active = true;
+
+							setTimeout(function() {
+								is_active = false;
+							}, 500); 
+						}
+					} else if (e.keyCode == 39) {
+						if (!hasStarted) {
+							start(); 
+							hasStarted = true;
+						} else {
+							moveIconsLeft(); 
+							is_active = true; 
+
+							setTimeout(function() {
+								is_active = false;
+							}, 500); 
+						}
+					} else if (e.keyCode == 13) {
+						if (!hasStarted) {
+							start(); 
+							hasStarted = true;
+						} else {
+							console.log("pressed enter"); 
+							var num = $('.select-button').attr("class").split(" ")[1].split("-")[2]; 
+							ipc.send("start-app", {id: num}); 
+							if (num == 3) {
+								//display the shit
+								$('.start-game').fadeIn(500); 
+								$('.load-gif').fadeIn(500); 
+								$('.load-gif').css("z-index", "999"); 
+
+								setTimeout(function() {
+									$('.start-game').fadeOut(500); 
+									$('.load-gif').fadeOut(500);
+								}, 5000); 
+							}
+						}
+					}
+				}	
+			});
+		}); 
+
+		function start() {
+			updateClock(); 
+			setInterval(function() {
+				updateClock(); 
+			}, 1000); 
+			document.getElementById('audio').play();
+			$('.overlay').animate({opacity: 0.7}, 5000);
+			$('.logo').fadeOut(4500); 
+			$('.load-gif').fadeOut(4500); 
+			$('.hidden').delay(4000).fadeIn(1000, function() {
+				for (var i = 1; i < 5; i++) {
+					start_pos_top[i] = $(".wave-button-" + i).position().top; 
+					start_pos_left[i] = $(".wave-button-" + i).position().left; 
+					start_radius[i] = $(".wave-button-" + i).width(); 
+				} 
+			});
+		}
+
+		/************************************************************
+		NAVIGATION CONTROL
+		************************************************************/
+		function moveIconsLeft() {
+			//get selected element 
+			var selected = $('.select-button').attr("class").split(" ")[1].split("-")[2]; 
+			if (parseInt(selected) == 4) {
+				return; 
+			} else {
+				if (offset == -3) {
+					offset = 0; 
+				} else {
+					offset--; 
+				}
+				$('.wave-button-' + selected).removeClass("select-button"); 
+
+				$('.wave-button-' + (parseInt(selected) + 1)).addClass("select-button"); 
+				for (var i = 1; i < 5; i++) {
+					var newIndex = i + offset; 
+					var newLeft; 
+					var newTop; 
+
+
+					if (newIndex <= 0) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) - 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[1], left: newLeft, 
+							width: start_radius[1], height: start_radius[1], opacity: 0}, 500);
+					} else if (newIndex >= 5) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) - 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[4], left: newLeft, 
+							width: start_radius[4], height: start_radius[4], opacity: 0}, 500);
+					} else if ($(".wave-button-" + i).css("opacity") == 0) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) - 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[4], left: newLeft, 
+							width: start_radius[4], height: start_radius[4], opacity: 1}, 500);
+					} else {
+						newLeft = start_pos_left[newIndex]; 
+						newTop = start_pos_top[newIndex]; 
+						$(".wave-button-" + i).animate({top: newTop, left: newLeft, 
+							width: start_radius[newIndex], height: start_radius[newIndex], opacity: 1}, 500);
+					} 
+				}
+			}
+		}
+
+		function moveIconsRight() {
+			var selected = $('.select-button').attr("class").split(" ")[1].split("-")[2]; 
+			if (parseInt(selected) == 1) {
+				return; 
+			} else {
+				if (offset == 3) {
+					offset = 0; 
+				} else {
+					offset++; 
+				}
+
+				$('.wave-button-' + selected).removeClass("select-button"); 
+
+				$('.wave-button-' + (parseInt(selected) - 1)).addClass("select-button"); 
+
+				for (var i = 1; i < 5; i++) {
+					var newIndex = i + offset; 
+					var newLeft; 
+					var newRight; 
+
+					if (newIndex <= 0) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) + 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[1], left: newLeft, 
+							width: start_radius[1], height: start_radius[1], opacity: 0}, 500);
+					} else if (newIndex >= 5) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) + 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[4], left: newLeft, 
+							width: start_radius[4], height: start_radius[4], opacity: 0}, 500);
+					} else if ($(".wave-button-" + i).css("opacity") == 0) {
+						newLeft = (parseFloat($(".wave-button-" + i).position().left) + 300) + "px";
+						$(".wave-button-" + i).animate({top: start_pos_top[1], left: newLeft, 
+							width: start_radius[1], height: start_radius[1], opacity: 1}, 500);
+					} else {
+						newLeft = start_pos_left[newIndex]; 
+						newTop = start_pos_top[newIndex]; 
+						$(".wave-button-" + i).animate({top: newTop, left: newLeft, 
+							width: start_radius[newIndex], height: start_radius[newIndex], opacity: 1}, 500);
+					} 
+				}
+			}
+		}
+
+		function updateClock () {
+			var date = new Date(); 
+			var hours = date.getHours();
+			var minutes = date.getMinutes();
+			var ampm = hours >= 12 ? 'pm' : 'am';
+			hours = hours % 12;
+			hours = hours ? hours : 12;
+			minutes = minutes < 10 ? '0'+minutes : minutes;
+			var strTime = hours + ':' + minutes + "<sup class='midday'>&nbsp;" + ampm;
+			$('.time-container').html(strTime);
+		}
+	</script>
+</body>
+</html>

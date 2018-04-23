@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Isle</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			height: 100%; 
+			width: 100%;
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+			background-color: rgb(78,194,185);
+		}
+
+		.left-container {
+			position: absolute;
+			height: 100%;
+			width: 30%;
+			border-right: 2px solid white;
+		}
+
+		.left-logo {
+			position: absolute;
+			top: -10%;
+			left: 0;
+			right: 0;
+			margin: 0 auto;			
+			width: 90%;
+		}
+
+		.now-playing {
+			position: absolute;
+			left: 0;
+			width: 80%;
+			height: 40%;
+			top: 40%;
+			margin: 10%;
+			background-color: white;
+		}
+
+		.right-container {
+			position: absolute;
+			top: 0;
+			right: 0;
+			height: 100%;
+			width: 70%;
+			background-color: green;
+		}
+
+		.music-container {
+			top: 5%;
+			left: 0;
+			right: 0;
+			margin: 0 auto;
+			width: 90%;
+			height: 85%;
+			background-color: blue;
+		}
+
+		.playbar {
+			position: absolute;
+			bottom: 0;
+			width: 100%;
+			height: 80px;
+			background-color: yellow;
+		}
+	</style>
+</head>
+<body>
+	<div class="left-container">
+		<img class="left-logo" src="./app-2.png">
+		<div class="now-playing"></div>
+	</div>
+	<div class="right-container">
+		<div class="music-container"></div>
+	</div>
+	<div class="playbar"></div>
+</body>
+</html>
